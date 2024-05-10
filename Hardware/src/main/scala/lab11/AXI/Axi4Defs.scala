@@ -2,6 +2,17 @@ package AXI
 
 import chisel3._
 import chisel3.util._
+/*
+Dcoupled
+  - ready: input
+  - valid: output
+  - bits: output
+Flipped
+  - ready: output
+  - valid: input
+  - bits: input
+*/
+
 
 class Axi4Request(val id_width: Int, val addr_width: Int, val data_width: Int) extends Bundle {
   val id     = UInt(id_width.W)

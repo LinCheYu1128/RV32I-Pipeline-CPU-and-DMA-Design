@@ -135,12 +135,26 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     val mWriteIdle :: mWriteReq :: mWriteSend :: mWriteResp :: Nil = Enum(4)
     val mReadState  = RegInit(mReadIdle)
     val mWriteState = RegInit(mWriteIdle)
+    // wait 1 cycle counter(to avoid go into next read/write immediately)
+    val wait_r_counter = RegInit(0.U(2.W))
+    val wait_w_counter = RegInit(0.U(2.W))
+    val mWriteDataSent = RegInit(false.B) // true for write data is sent through master interface
+    // check Write Addr and Data status
+    when(mWriteState === mWriteSend) {
+        when(io.DataMem.w.ready) {
+            mWriteDataSent := true.B
+        }
+    }.otherwise {
+        mWriteDataSent := false.B
+    }
+
     // Mater State Controller
     switch(mReadState) {
         is(mReadIdle) {
-            when(contorller.io.DM_Mem_R === 1.U) {
+            when(contorller.io.DM_Mem_R === 1.U && wait_r_counter === 0.U) {
                 mReadState := mReadReq
             }
+            wait_r_counter := 0.U
         }
         is(mReadReq) {
             when(io.DataMem.ar.ready) {
@@ -149,15 +163,17 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
         }
         is(mReadResp) {
             when(io.DataMem.r.valid) {
-                mReadState := mReadState
+                mReadState := mReadIdle
+                wait_r_counter := 1.U
             }
         }
     }
     switch(mWriteState) {
         is(mWriteIdle) {
-            when(contorller.io.DM_Mem_W === 1.U) {
-                mWriteState := mWriteReq
+            when(contorller.io.DM_Mem_W === 1.U && wait_w_counter === 0.U) {
+                mWriteState := mWriteSend
             }
+            wait_w_counter := 0.U
         }
         is(mWriteReq) {
             when(io.DataMem.aw.ready) {
@@ -165,20 +181,23 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
             }
         }
         is(mWriteSend) {
-            when(io.DataMem.w.ready) {
+            when(mWriteDataSent) {
                 mWriteState := mWriteResp
             }
         }
         is(mWriteResp) {
+            // mWriteState := mWriteIdle
+            // wait_w_counter := 1.U
             when(io.DataMem.b.valid) {
                 mWriteState := mWriteIdle
+                wait_w_counter := 1.U
             }
         }
     }
     // === AXI read ===============================================================
     // read address channel
     io.DataMem.ar.valid       := mReadState === mReadReq
-    io.DataMem.ar.bits.addr   := 0.U//datapath_MEM.io.Mem_Addr
+    io.DataMem.ar.bits.addr   := datapath_MEM.io.Mem_Addr + "h8000".U
     io.DataMem.ar.bits.burst  := 0.U
     io.DataMem.ar.bits.len    := 0.U //contorller.io.DM_Length // Burst length
     io.DataMem.ar.bits.size   := 2.U // 4 bytes
@@ -192,8 +211,8 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     io.DataMem.r.ready := mReadState === mReadResp
     // === AXI write ==============================================================
     // write address channel
-    io.DataMem.aw.valid       := mWriteState === mWriteReq
-    io.DataMem.aw.bits.addr   := 0.U //datapath_MEM.io.Mem_Addr
+    io.DataMem.aw.valid       := mWriteState === mWriteSend && !mWriteDataSent
+    io.DataMem.aw.bits.addr   := datapath_MEM.io.Mem_Addr + "h8000".U
     io.DataMem.aw.bits.burst  := 0.U
     io.DataMem.aw.bits.len    := 0.U //contorller.io.DM_Length // Burst length
     io.DataMem.aw.bits.size   := 2.U // 4 bytes
@@ -204,7 +223,7 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     io.DataMem.aw.bits.qos    := 0.U
     io.DataMem.aw.bits.region := 0.U
     // write data channel
-    io.DataMem.w.valid     := mWriteState === mWriteSend
+    io.DataMem.w.valid     := mWriteState === mWriteSend && !mWriteDataSent
     io.DataMem.w.bits.data := datapath_MEM.io.Mem_Write_Data
     io.DataMem.w.bits.strb := "b1111".U
     io.DataMem.w.bits.last := true.B
@@ -247,7 +266,7 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     contorller.io.EXE_target_pc := datapath_EXE.io.EXE_target_pc_out
 
     contorller.io.IM_Valid := io.InstMem.Valid
-    contorller.io.DM_Valid := io.DataMem.r.valid || io.DataMem.w.ready // io.DataMem.Valid
+    contorller.io.DM_Valid := io.DataMem.r.valid || io.DataMem.b.valid //RegNext(io.DataMem.w.valid) // io.DataMem.Valid
 
 
     /* System */

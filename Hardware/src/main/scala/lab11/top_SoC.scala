@@ -50,13 +50,13 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val nSlaves: Int = 1
     val DMABaseAddr: Int = 0
     val DMASize: Int = 100
-    val DataMemBaseAddr: Int = 0 // Provide the base address
+    val DataMemBaseAddr: Int = 0x8000 // Provide the base address
     val DataMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
       "Height" -> 32, // The Number of bytes
       "Width" -> 32 // unit: 32 bits
     )
-    val DataMemLatency: Int = 1
+    val DataMemLatency: Int = 5
     val DataMemInitFilePath: String =
       "./src/main/resource/data.hex" // Provide the file path
   }

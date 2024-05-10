@@ -262,15 +262,34 @@ class Controller(memAddrWidth: Int) extends Module {
   io.Stall_DH := (is_D_rs1_W_rd_overlap || is_D_rs2_W_rd_overlap) || 
                  (is_D_rs1_E_rd_overlap || is_D_rs2_E_rd_overlap) || 
                  (is_D_rs1_M_rd_overlap || is_D_rs2_M_rd_overlap) 
-  // val wait_memory_access = Wire(Bool())
+  
+  // wait memory access
   val DM_to_read = Wire(Bool())
   val DM_to_write = Wire(Bool())
+  val DM_done = Wire(Bool())
   DM_to_read := (MEM_opcode === LOAD)
   DM_to_write := (MEM_opcode === STORE)
-  val DM_done = Wire(Bool())
-  DM_done := (~DM_to_read && ~DM_to_write)
-
-  io.Stall_MA := DM_to_read || DM_to_write // Stall for Waiting Memory Access
+  DM_done := (~DM_to_read && ~DM_to_write) | io.DM_Valid
+  // Memory Access State
+  val sNormal :: sWait :: sDM_done :: Nil = Enum(3)
+  val MemState = RegInit(sNormal)
+  switch(MemState){
+    is(sNormal){
+      when(DM_to_read || DM_to_write){
+        MemState := sWait
+      }
+    }
+    is(sWait){
+      when(DM_done){
+        MemState := sDM_done
+      }
+    }
+    is(sDM_done){
+      MemState := sNormal
+    }
+  }
+  io.Stall_MA := (MemState === sNormal && ~DM_done) || (MemState === sWait) // Stall for Waiting Memory Access
+  
   // Control signal - Flush
   io.Flush_BH := Predict_Miss // Flush for Branch Hazard
   io.Flush_DH := (is_D_rs1_W_rd_overlap || is_D_rs2_W_rd_overlap) ||
