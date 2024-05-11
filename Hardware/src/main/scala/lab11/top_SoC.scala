@@ -20,7 +20,9 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     //for sure that IM and DM will be synthesized
     val inst = Output(UInt(32.W))
     val rdata = Output(UInt(32.W))
+    val raddr = Output(UInt(32.W))
     val wdata  = Output(UInt(32.W))
+    val waddr = Output(UInt(32.W))
 
     val Dump_Mem = Input(Bool())
     // Test
@@ -38,7 +40,6 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val EXE_src2 = Output(UInt(32.W))
     val ALU_src1 = Output(UInt(32.W))
     val ALU_src2 = Output(UInt(32.W))
-    val raddr = Output(UInt(32.W))
     val WB_rd = Output(UInt(5.W))
     val WB_wdata = Output(UInt(32.W))
     val EXE_Jump = Output(Bool())
@@ -56,7 +57,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
       "Height" -> 32, // The Number of bytes
       "Width" -> 32 // unit: 32 bits
     )
-    val DataMemLatency: Int = 5
+    val DataMemLatency: Int = 1
     val DataMemInitFilePath: String =
       "./src/main/resource/data.hex" // Provide the file path
   }
@@ -109,6 +110,8 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
   io.inst := im.io.inst
   io.rdata := datamem.io.slave.r.bits.data
   io.wdata := datamem.io.slave.w.bits.data
+  io.raddr := cpu.io.raddr
+  io.waddr := cpu.io.waddr
 
   // Test
   io.E_Branch_taken := cpu.io.E_Branch_taken
@@ -125,7 +128,6 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
   io.EXE_src2 := cpu.io.EXE_src2
   io.ALU_src1 := cpu.io.ALU_src1
   io.ALU_src2 := cpu.io.ALU_src2
-  io.raddr := cpu.io.raddr
   io.WB_rd := cpu.io.WB_rd
   io.WB_wdata := cpu.io.WB_wdata
   io.EXE_Jump := cpu.io.EXE_Jump

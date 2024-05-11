@@ -41,6 +41,8 @@ class top_SoCTest(dut: top_SoC) extends PeekPokeTester(dut) {
     var ALU_src2 = (peek(dut.io.ALU_src2).toInt.toHexString).replace(' ', '0')
     var DM_rdata = (peek(dut.io.rdata).toInt.toHexString).replace(' ', '0')
     var DM_raddr = (peek(dut.io.raddr).toInt.toHexString).replace(' ', '0')
+    var DM_wdata = (peek(dut.io.wdata).toInt.toHexString).replace(' ', '0')
+    var DM_waddr = (peek(dut.io.waddr).toInt.toHexString).replace(' ', '0')
     var WB_reg = peek(dut.io.WB_rd).toInt
     var WB_wdata = (peek(dut.io.WB_wdata).toInt.toHexString).replace(' ', '0')
 
@@ -65,7 +67,8 @@ class top_SoCTest(dut: top_SoC) extends PeekPokeTester(dut) {
     )
     println(
       s"[PC_MEM]${"%8d".format(PC_MEM)} [Inst] ${"%-25s".format(lines(PC_MEM >> 2))} " +
-        s"[DM Raddr]${"%8s".format(DM_raddr)} [DM Rdata]${"%8s".format(DM_rdata)}"
+        s"[DM Raddr]${"%8s".format(DM_raddr)} [DM Rdata]${"%8s".format(DM_rdata)}" +
+        s"[DM Waddr]${"%8s".format(DM_waddr)} [DM Wdata]${"%8s".format(DM_wdata)}"
     )
     println(
       s"[PC_WB ]${"%8d".format(PC_WB)} [Inst] ${"%-25s".format(lines(PC_WB >> 2))} " +

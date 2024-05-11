@@ -38,6 +38,7 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
         val ALU_src1 = Output(UInt(32.W))
         val ALU_src2 = Output(UInt(32.W))
         val raddr = Output(UInt(memAddrWidth.W))
+        val waddr = Output(UInt(memAddrWidth.W))
         val EXE_alu_out = Output(UInt(32.W))
         val WB_rd = Output(UInt(5.W))
         val WB_wdata = Output(UInt(32.W))
@@ -290,7 +291,8 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     io.EXE_src2 := datapath_EXE.io.EXE_src2
     io.ALU_src1 := datapath_EXE.io.alu_src1
     io.ALU_src2 := datapath_EXE.io.alu_src2
-    io.raddr := datapath_MEM.io.Mem_Addr
+    io.raddr := io.DataMem.ar.bits.addr
+    io.waddr := io.DataMem.aw.bits.addr
     io.WB_wdata := datapath_WB.io.WB_wdata
     io.WB_rd := stage_WB.io.inst(11,7)
     io.EXE_Jump := (stage_EXE.io.inst(6, 0)===JAL) || (stage_EXE.io.inst(6, 0)===JALR)

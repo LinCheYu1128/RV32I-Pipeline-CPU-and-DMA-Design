@@ -20,7 +20,8 @@ class DataMem(
     val dump = Input(Bool())
   })
 
-  val memory = Mem(height, UInt(width.W))
+  // val memory = Mem(height, UInt(width.W))
+  val memory = Mem(1<<15, UInt(width.W))
   loadMemoryFromFileInline(memory, filePath)
 
   // aw channel
@@ -157,6 +158,7 @@ class DataMem(
     io.slave.w.ready := true.B
     when(io.slave.aw.valid && io.slave.w.valid) {
       memory(wAddrOffset) := writeData.asUInt()
+      printf("Write Data: %x, %x\n", writeData.asUInt(), writeAddressReg)
       writeAddressReg := wAddrOffset
       writeID := io.slave.aw.bits.id
     }
@@ -193,7 +195,7 @@ class DataMem(
     /* Dump Memory */
     printf("\t\t======== Data Memory Dump ========\n")
     printf(p"\t\tFrom base address ${baseAddr}\n")
-    for (i <- 0 until 32) {
+    for (i <- 0 until 64) {
       val indexAddr = baseAddr + i * 4
       val data = memory(i.U).asSInt
       printf(
