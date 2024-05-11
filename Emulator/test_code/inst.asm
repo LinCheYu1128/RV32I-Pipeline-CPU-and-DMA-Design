@@ -1,15 +1,11 @@
-lui x08, 0x00000008
-addi x08, x08, 0x00000000
-lui x09, 0x00000008
-addi x09, x09, 0x00000010
-lui x18, 0x00000008
-addi x18, x18, 0x00000020
-lui x19, 0x00000008
-addi x19, x19, 0x00000034
-lw s3, 0(s3)
-lui x31, 0x00000008
-addi x31, x31, 0x00000038
-hcf
+lui x1, 0x00000000
+lw x2, 0(x1)
+addi x2, x2, 0x00000058
+sw x2, 4(x1)
+addi x31, x31, 0x00000058
+addi x31, x31, 0x00000058
+addi x31, x31, 0x00000058
+addi x31, x31, 0x00000058
 hcf
 nop
 nop
