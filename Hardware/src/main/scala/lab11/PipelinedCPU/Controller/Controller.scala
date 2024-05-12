@@ -281,14 +281,14 @@ class Controller(memAddrWidth: Int) extends Module {
     }
     is(sWait){
       when(DM_done){
-        MemState := sDM_done
+        MemState := sNormal
       }
     }
     is(sDM_done){
       MemState := sNormal
     }
   }
-  io.Stall_MA := (MemState === sNormal && ~DM_done) || (MemState === sWait) // Stall for Waiting Memory Access
+  io.Stall_MA := (MemState === sNormal && ~DM_done) || (MemState === sWait && ~DM_done) // Stall for Waiting Memory Access
   
   // Control signal - Flush
   io.Flush_BH := Predict_Miss // Flush for Branch Hazard

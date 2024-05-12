@@ -11,10 +11,11 @@ using namespace std;
 // read data from file cat 4 line by line
 int main(){
     ifstream InFile("data.hex");
-    ofstream OutFile("output.txt");
+    ofstream OutFile("data_c.hex");
     string line;
     int count = 0;
     string data = "";
+    string temp = "";
     while(getline(InFile, line)){
         if (count == 4){
             count = 0;
@@ -22,8 +23,8 @@ int main(){
             OutFile << data << endl;
             data = "";
         }
-        
-        data += line;
+        line += data;
+        data = line;
         count ++;
     }
 }

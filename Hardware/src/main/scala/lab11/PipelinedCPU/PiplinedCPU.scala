@@ -9,6 +9,8 @@ import PiplinedCPU.StageRegister._
 import PiplinedCPU.Controller._
 import PiplinedCPU.DatapathModule._
 import PiplinedCPU.opcode_map._
+import PiplinedCPU.wide._
+
 
 class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     val io = IO(new Bundle{
@@ -128,7 +130,20 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     datapath_MEM.io.MEM_alu_out_in := stage_MEM.io.alu_out
     datapath_MEM.io.MEM_DM_wdata_in := stage_MEM.io.DM_wdata
     // datapath_MEM.io.Mem_Data := io.DataMem.rdata(31,0)
-    datapath_MEM.io.Mem_Data := io.DataMem.r.bits.data(31,0)
+    datapath_MEM.io.Mem_Data := MuxLookup(contorller.io.DM_Length, io.DataMem.r.bits.data, Seq(
+        Byte -> MuxLookup(datapath_MEM.io.Mem_Addr(1,0), io.DataMem.r.bits.data(7,0).asUInt,  Seq(
+            "b00".U -> io.DataMem.r.bits.data(7,0).asUInt,
+            "b01".U -> io.DataMem.r.bits.data(15,8).asUInt,
+            "b10".U -> io.DataMem.r.bits.data(23,16).asUInt,
+            "b11".U -> io.DataMem.r.bits.data(31,24).asUInt
+        )),
+        Half -> MuxLookup(datapath_MEM.io.Mem_Addr(1), io.DataMem.r.bits.data(15,0).asUInt,  Seq(
+            "b0".U -> io.DataMem.r.bits.data(15,0).asUInt,
+            "b1".U -> io.DataMem.r.bits.data(31,16).asUInt,
+        )),
+        Word -> io.DataMem.r.bits.data(31,0).asUInt
+    ))
+    io.DataMem.r.bits.data(31,0)
 
     // --- Data Memory Interface
     // Master state machine
@@ -136,9 +151,6 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     val mWriteIdle :: mWriteReq :: mWriteSend :: mWriteResp :: Nil = Enum(4)
     val mReadState  = RegInit(mReadIdle)
     val mWriteState = RegInit(mWriteIdle)
-    // wait 1 cycle counter(to avoid go into next read/write immediately)
-    val wait_r_counter = RegInit(0.U(2.W))
-    val wait_w_counter = RegInit(0.U(2.W))
     val mWriteDataSent = RegInit(false.B) // true for write data is sent through master interface
     // check Write Addr and Data status
     when(mWriteState === mWriteSend) {
@@ -152,10 +164,9 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     // Mater State Controller
     switch(mReadState) {
         is(mReadIdle) {
-            when(contorller.io.DM_Mem_R === 1.U && wait_r_counter === 0.U) {
+            when(contorller.io.DM_Mem_R === 1.U) {
                 mReadState := mReadReq
             }
-            wait_r_counter := 0.U
         }
         is(mReadReq) {
             when(io.DataMem.ar.ready) {
@@ -165,16 +176,14 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
         is(mReadResp) {
             when(io.DataMem.r.valid) {
                 mReadState := mReadIdle
-                wait_r_counter := 1.U
             }
         }
     }
     switch(mWriteState) {
         is(mWriteIdle) {
-            when(contorller.io.DM_Mem_W === 1.U && wait_w_counter === 0.U) {
+            when(contorller.io.DM_Mem_W === 1.U) {
                 mWriteState := mWriteSend
             }
-            wait_w_counter := 0.U
         }
         is(mWriteReq) {
             when(io.DataMem.aw.ready) {
@@ -187,21 +196,18 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
             }
         }
         is(mWriteResp) {
-            // mWriteState := mWriteIdle
-            // wait_w_counter := 1.U
             when(io.DataMem.b.valid) {
                 mWriteState := mWriteIdle
-                wait_w_counter := 1.U
             }
         }
     }
     // === AXI read ===============================================================
     // read address channel
     io.DataMem.ar.valid       := mReadState === mReadReq
-    io.DataMem.ar.bits.addr   := datapath_MEM.io.Mem_Addr + "h8000".U
+    io.DataMem.ar.bits.addr   := datapath_MEM.io.Mem_Addr
     io.DataMem.ar.bits.burst  := 0.U
-    io.DataMem.ar.bits.len    := 0.U //contorller.io.DM_Length // Burst length
-    io.DataMem.ar.bits.size   := 2.U // 4 bytes
+    io.DataMem.ar.bits.len    := 0.U  // Burst length
+    io.DataMem.ar.bits.size   := 2.U  // burst size: 4 bytes
     io.DataMem.ar.bits.cache  := 0.U
     io.DataMem.ar.bits.id     := 0.U
     io.DataMem.ar.bits.prot   := 0.U
@@ -213,10 +219,10 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     // === AXI write ==============================================================
     // write address channel
     io.DataMem.aw.valid       := mWriteState === mWriteSend && !mWriteDataSent
-    io.DataMem.aw.bits.addr   := datapath_MEM.io.Mem_Addr + "h8000".U
+    io.DataMem.aw.bits.addr   := datapath_MEM.io.Mem_Addr
     io.DataMem.aw.bits.burst  := 0.U
-    io.DataMem.aw.bits.len    := 0.U //contorller.io.DM_Length // Burst length
-    io.DataMem.aw.bits.size   := 2.U // 4 bytes
+    io.DataMem.aw.bits.len    := 0.U  // Burst length
+    io.DataMem.aw.bits.size   := 2.U  // burst size: 4 bytes
     io.DataMem.aw.bits.cache  := 0.U
     io.DataMem.aw.bits.id     := 0.U
     io.DataMem.aw.bits.prot   := 0.U
@@ -225,8 +231,33 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     io.DataMem.aw.bits.region := 0.U
     // write data channel
     io.DataMem.w.valid     := mWriteState === mWriteSend && !mWriteDataSent
-    io.DataMem.w.bits.data := datapath_MEM.io.Mem_Write_Data
-    io.DataMem.w.bits.strb := "b1111".U
+    io.DataMem.w.bits.data := MuxLookup(contorller.io.DM_Length, datapath_MEM.io.Mem_Write_Data, Seq(
+        Byte -> MuxLookup(datapath_MEM.io.Mem_Addr(1,0), datapath_MEM.io.Mem_Write_Data,  Seq(
+            "b00".U -> Cat(0.U(24.W), datapath_MEM.io.Mem_Write_Data(7,0)),
+            "b01".U -> Cat(0.U(16.W), datapath_MEM.io.Mem_Write_Data(7,0), 0.U(8.W)),
+            "b10".U -> Cat(0.U(8.W), datapath_MEM.io.Mem_Write_Data(7,0), 0.U(16.W)),
+            "b11".U -> Cat(datapath_MEM.io.Mem_Write_Data(7,0), 0.U(24.W)),
+        )),
+        Half -> MuxLookup(datapath_MEM.io.Mem_Addr(1), datapath_MEM.io.Mem_Write_Data,  Seq(
+            "b0".U -> Cat(0.U(8.W), datapath_MEM.io.Mem_Write_Data(7,0)),
+            "b1".U -> Cat(datapath_MEM.io.Mem_Write_Data(7,0), 0.U(8.W)),
+        )),
+        Word -> datapath_MEM.io.Mem_Write_Data
+    ))
+    
+    io.DataMem.w.bits.strb := MuxLookup(contorller.io.DM_Length, "b0001".U, Seq(
+        Byte -> MuxLookup(datapath_MEM.io.Mem_Addr(1,0), "b0001".U,  Seq(
+            "b00".U -> "b0001".U,
+            "b01".U -> "b0010".U,
+            "b10".U -> "b0100".U,
+            "b11".U -> "b1000".U,
+        )),
+        Half -> MuxLookup(datapath_MEM.io.Mem_Addr(1), "b0011".U,  Seq(
+            "b0".U -> "b0011".U,
+            "b1".U -> "b1100".U,
+        )),
+        Word -> "b1111".U
+    ))
     io.DataMem.w.bits.last := true.B
     // write response channel
     io.DataMem.b.ready := (mWriteState === mWriteResp || mWriteState === mWriteSend)

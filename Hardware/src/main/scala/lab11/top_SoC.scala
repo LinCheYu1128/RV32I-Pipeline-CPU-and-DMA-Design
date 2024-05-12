@@ -59,7 +59,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     )
     val DataMemLatency: Int = 1
     val DataMemInitFilePath: String =
-      "./src/main/resource/data.hex" // Provide the file path
+      "./src/main/resource/data_c.hex" // Provide the file path
   }
   // Call module
   val cpu = Module(new PiplinedCPU(15,32))
