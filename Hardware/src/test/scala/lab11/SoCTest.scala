@@ -4,6 +4,8 @@ import scala.io.Source
 import chisel3.iotesters.{PeekPokeTester, Driver}
 import scala.language.implicitConversions
 
+import Utils.AXITester
+
 import Config._
 
 class top_SoCTest(dut: top_SoC) extends PeekPokeTester(dut) {
@@ -176,9 +178,14 @@ class top_SoCTest(dut: top_SoC) extends PeekPokeTester(dut) {
   )
   println("==============================================================")
   /* Lab 9_3 performance counter */
-
-  poke(dut.io.Dump_Mem, true)
+  println("Local Mem:\n")
+  poke(dut.io.localMemDump, true)
   step(1)
+  poke(dut.io.localMemDump, false)
+  println("Global Mem:\n")
+  poke(dut.io.globalMemDump, true)
+  step(1)
+  poke(dut.io.globalMemDump, false)
 }
 
 object top_SoCTest extends App {

@@ -24,7 +24,11 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val wdata  = Output(UInt(32.W))
     val waddr = Output(UInt(32.W))
 
-    val Dump_Mem = Input(Bool())
+    val localMemDump = Input(Bool())
+    val globalMemDump = Input(Bool())
+
+    val slave = new Axi4SlaveIF(idWidth, addrWidth, dataWidth, 2)
+
     // Test
     val E_Branch_taken = Output(Bool())
     val Flush = Output(Bool())
@@ -47,23 +51,33 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
   })
 
   object SystemConfig {
-    val nMasters: Int = 1
-    val nSlaves: Int = 1
+    val nMasters: Int = 2
+    val nSlaves: Int = 2
     val DMABaseAddr: Int = 0
     val DMASize: Int = 100
     val DataMemBaseAddr: Int = 0x8000 // Provide the base address
     val DataMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
-      "Height" -> 32, // The Number of bytes
+      "Height" -> 256, // The Number of bytes
       "Width" -> 32 // unit: 32 bits
     )
     val DataMemLatency: Int = 1
     val DataMemInitFilePath: String =
-      "./src/main/resource/data_c.hex" // Provide the file path
+      "./src/main/resource/data0.hex" // Provide the file path
+    val GlobalMemBaseAddr: Int = 0 // Provide the base address
+    val GlobalMemSize: Map[String, Int] = Map(
+      "Size" -> 1024, // Height x Width
+      "Height" -> 256, // The Number of bytes
+      "Width" -> 32 // unit: 32 bits
+    )
+    val GlobalMemLatency: Int = 10
+    val GlobalMemInitFilePath: String =
+      "./src/main/resource/data1.hex" // Provide the file path
   }
   // Call module
-  val cpu = Module(new PiplinedCPU(15,32))
-  val im = Module(new InstMem(15))
+  val cpu = Module(new PiplinedCPU(addrWidth,32))
+  val im = Module(new InstMem(addrWidth))
+  val dma = Module(new DMA(idWidth, addrWidth, dataWidth, 0))
   val datamem = Module(
     new DataMem(
       SystemConfig.DataMemSize("Width"),
@@ -76,6 +90,19 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
       SystemConfig.DataMemInitFilePath
     )
   )
+  val globalMem = Module(
+    new DataMem(
+      SystemConfig.GlobalMemSize("Width"),
+      SystemConfig.GlobalMemSize("Height"),
+      idWidth,
+      addrWidth,
+      dataWidth,
+      SystemConfig.GlobalMemBaseAddr,
+      SystemConfig.GlobalMemLatency,
+      SystemConfig.GlobalMemInitFilePath
+    )
+  )
+
   val bus = Module(
     new AXILiteXBar(
       SystemConfig.nMasters,
@@ -90,18 +117,36 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
   )
 
   // Memory
-  datamem.io.dump := io.Dump_Mem
+  datamem.io.dump := io.localMemDump
+  globalMem.io.dump := io.globalMemDump
 
   // Piplined CPU
   cpu.io.InstMem.rdata := im.io.inst
   cpu.io.InstMem.Valid := true.B // Direct to Mem
-
+  cpu.io.DMA_running  := true.B // DMA finished: local memory is syncronized with global memory
   // Insruction Memory
   im.io.raddr := cpu.io.InstMem.raddr
 
   // connect dma and mem through bus
   bus.io.masters(0) <> cpu.io.DataMem
+  bus.io.masters(1) <> dma.io.master
   bus.io.slaves(0) <> datamem.io.slave
+  bus.io.slaves(1) <> globalMem.io.slave
+  
+  // DMA: move data from global memory to data memory
+  val DMA_counter = RegInit(0.U(32.W))
+//   dma.io.slave..addr -> addr.U,
+// dma.io.slave..burst -> 0.U, // burst mode : FIXED
+// dma.io.slave..cache -> 0.U,
+// dma.io.slave..id    -> 0.U,
+// dma.io.slave..len   -> 0.U, // one beat for burst
+// dma.io.slave..lock  -> 0.U,
+// dma.io.slave..prot  -> 0.U,
+// dma.io.slave..qos   -> 0.U,
+// dma.io.slave..region -> 0.U,
+// dma.io.slave..size  -> 2.U
+  
+  io.slave <> dma.io.slave
 
   //System
   io.regs := cpu.io.regs

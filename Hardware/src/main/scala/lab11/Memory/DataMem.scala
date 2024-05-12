@@ -20,7 +20,7 @@ class DataMem(
     val dump = Input(Bool())
   })
 
-  val memory = Mem(256, UInt(width.W))
+  val memory = Mem(height, UInt(width.W))
   loadMemoryFromFileInline(memory, filePath)
 
   // aw channel

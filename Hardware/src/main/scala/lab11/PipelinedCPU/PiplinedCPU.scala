@@ -19,7 +19,7 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
 
         // DataMem
         val DataMem = new Axi4MasterIF(4, memAddrWidth, memDataWidth, 2)
-        // val DataMem = new MemIF_CPU(memAddrWidth, memDataWidth)
+        val DMA_running = Input(Bool())
 
         //System
         val regs = Output(Vec(32,UInt(32.W)))
@@ -67,7 +67,7 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
 
     /* Wire Connect */
     // === IF stage reg (PC reg) ======================================================
-    stage_IF.io.Stall := (contorller.io.Hcf||contorller.io.Stall_DH || contorller.io.Stall_MA)       // To Be Modified
+    stage_IF.io.Stall := (contorller.io.Hcf||contorller.io.Stall_DH || contorller.io.Stall_MA || io.DMA_running)       // To Be Modified
     stage_IF.io.next_pc_in := datapath_IF.io.next_pc
 
     // IF Block Datapath
@@ -262,7 +262,6 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     // write response channel
     io.DataMem.b.ready := (mWriteState === mWriteResp || mWriteState === mWriteSend)
 
-
     // io.DataMem.Mem_R := contorller.io.DM_Mem_R
     // io.DataMem.Mem_W :=  contorller.io.DM_Mem_W
     // io.DataMem.Length :=  contorller.io.DM_Length
@@ -298,7 +297,8 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
     contorller.io.EXE_target_pc := datapath_EXE.io.EXE_target_pc_out
 
     contorller.io.IM_Valid := io.InstMem.Valid
-    contorller.io.DM_Valid := io.DataMem.r.valid || io.DataMem.b.valid //RegNext(io.DataMem.w.valid) // io.DataMem.Valid
+    // use DM_Valid to stall all cpu to wait DMA move all data to data memory
+    contorller.io.DM_Valid := io.DataMem.r.valid || io.DataMem.b.valid
 
 
     /* System */
