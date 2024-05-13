@@ -1,14 +1,20 @@
 package SoC
 
+import org.scalatest._
+import chisel3._
+import chiseltest._
+import chisel3.util._
 import scala.io.Source
 import chisel3.iotesters.{PeekPokeTester, Driver}
+import chiseltest.{WriteVcdAnnotation, VerilatorBackendAnnotation}
 import scala.language.implicitConversions
 
 import Utils.AXITester
 
 import Config._
 
-class top_SoCTest(dut: top_SoC) extends PeekPokeTester(dut) {
+class top_SoCTest(dut: top_SoC) 
+  extends PeekPokeTester(dut) {
 
   implicit def bigint2boolean(b: BigInt): Boolean = if (b > 0) true else false
 
@@ -182,6 +188,7 @@ class top_SoCTest(dut: top_SoC) extends PeekPokeTester(dut) {
   poke(dut.io.localMemDump, true)
   step(1)
   poke(dut.io.localMemDump, false)
+  step(1)
   println("Global Mem:\n")
   poke(dut.io.globalMemDump, true)
   step(1)

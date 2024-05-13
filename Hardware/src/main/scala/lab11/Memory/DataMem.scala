@@ -158,7 +158,7 @@ class DataMem(
     io.slave.w.ready := true.B
     when(io.slave.aw.valid && io.slave.w.valid) {
       memory(wAddrOffset) := writeData.asUInt()
-      printf("Write Data: %x, %x\n", writeData.asUInt(), writeAddressReg)
+      printf("Write Data: %x, %x + %x*4\n", writeData.asUInt(), baseAddr.U, writeAddressReg)
       writeAddressReg := wAddrOffset
       writeID := io.slave.aw.bits.id
     }
@@ -194,12 +194,12 @@ class DataMem(
   when(io.dump) {
     /* Dump Memory */
     printf("\t\t======== Data Memory Dump ========\n")
-    printf(p"\t\tFrom base address ${baseAddr}\n")
+    printf("\t\tFrom base address %d\n", baseAddr.U)
     for (i <- 0 until 64) {
       val indexAddr = baseAddr + i * 4
       val data = memory(i).asSInt
       printf(
-        "\t\tDataMem[%d] (address = %x) = 0x%x (%d)\n", i.U, indexAddr.asUInt, data.asSInt, data.asSInt
+        "\t\tDataMem[%d] (address = %d(%x)) = 0x%x (%d)\n", i.U, indexAddr.asUInt, indexAddr.asUInt, data.asSInt, data.asSInt
       )
     }
     printf("\n")

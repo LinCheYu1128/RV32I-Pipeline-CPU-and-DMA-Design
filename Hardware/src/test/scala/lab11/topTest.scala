@@ -52,17 +52,17 @@ class SimpleTopTest
 
         // make requests
         val prog_source_aw = genAXIAddr(4)
-        val prog_source_w = genAXIWriteData(0, 109, "b1111", true)
+        val prog_source_w = genAXIWriteData(0, 1124, "b1111", true)
         val prog_source_b = genAXIWriteResp(0)
 
         val prog_dest_aw = genAXIAddr(8)
         val prog_dest_w =
-          genAXIWriteData(0, 1134, "b1111", true)
+          genAXIWriteData(0, 0x8000, "b1111", true)
         val prog_dest_b = genAXIWriteResp(0)
 
         val prog_size_aw = genAXIAddr(12)
         val prog_size_w =
-          genAXIWriteData(0, BigInt("04040202", 16).toInt, "b1111", true)
+          genAXIWriteData(0, BigInt("04040425", 16).toInt, "b1111", true)
         val prog_size_b = genAXIWriteResp(0)
 
         val prog_enable_aw = genAXIAddr(0)

@@ -1,2 +1,2 @@
-# sbt 'Test/runMain SoC.top_SoCTest -tbn verilator -td ./generated'
-sbt 'Test/runMain SoC.top_SoCTest'
+sbt 'Test/runMain SoC.top_SoCTest -tbn verilator'
+# sbt 'Test/runMain SoC.top_SoCTest -td ./generated'
