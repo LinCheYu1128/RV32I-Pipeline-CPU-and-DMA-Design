@@ -54,7 +54,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val DataMemBaseAddr: Int = 0x8000 // Provide the base address
     val DataMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
-      "Height" -> 32, // The Number of bytes
+      "Height" -> 64, // The Number of bytes
       "Width" -> 32 // unit: 32 bits
     )
     val DataMemLatency: Int = 1
@@ -62,7 +62,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
       "./src/main/resource/data_c.hex" // Provide the file path
   }
   // Call module
-  val cpu = Module(new PiplinedCPU(15,32))
+  val cpu = Module(new PiplinedCPU(addrWidth, dataWidth))
   val im = Module(new InstMem(15))
   val datamem = Module(
     new DataMem(
