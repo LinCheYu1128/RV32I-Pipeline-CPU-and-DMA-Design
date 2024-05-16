@@ -67,7 +67,7 @@ class PiplinedCPU(memAddrWidth: Int, memDataWidth: Int) extends Module {
 
     /* Wire Connect */
     // === IF stage reg (PC reg) ======================================================
-    stage_IF.io.Stall := (contorller.io.Hcf||contorller.io.Stall_DH || contorller.io.Stall_MA || io.DMA_running)       // To Be Modified
+    stage_IF.io.Stall := (contorller.io.Hcf||contorller.io.Stall_DH || contorller.io.Stall_MA)       // To Be Modified
     stage_IF.io.next_pc_in := datapath_IF.io.next_pc
 
     // IF Block Datapath

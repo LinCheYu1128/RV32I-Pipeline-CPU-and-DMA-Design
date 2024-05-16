@@ -753,9 +753,10 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 
 					std::string linebuf;
 					fflush(stdout);
-					linenoise::Readline(">>", linebuf);
+					keybuf[0] = '\n';
+					// linenoise::Readline(">>", linebuf);
 					memcpy(keybuf, linebuf.c_str(), 128);
-					linenoise::AddHistory(linebuf.c_str());
+					// linenoise::AddHistory(linebuf.c_str());
 					//while ((kbp = linenoise?::Readline(">>")) == NULL);
 					//fgets(keybuf, 128, stdin);
 
