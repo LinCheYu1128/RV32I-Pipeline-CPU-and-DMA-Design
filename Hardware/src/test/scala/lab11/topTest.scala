@@ -51,28 +51,29 @@ class SimpleTopTest
         dut.io.slave.b.initSink().setSinkClock(dut.clock)
 
         // make requests
-        val prog_source_aw = genAXIAddr(4)
+        val prog_source_aw = genAXIAddr(4)  // offset SOURCE_INFO 0x4
         val prog_source_w = genAXIWriteData(0, 1124, "b1111", true)
         val prog_source_b = genAXIWriteResp(0)
 
-        val prog_dest_aw = genAXIAddr(8)
+        val prog_dest_aw = genAXIAddr(8)  // offset DEST_INFO 0x8
         val prog_dest_w =
           genAXIWriteData(0, 0x8000, "b1111", true)
         val prog_dest_b = genAXIWriteResp(0)
 
-        val prog_size_aw = genAXIAddr(12)
+        val prog_size_aw = genAXIAddr(12) // offset DMA_SIZE_CFG 0xC
         val prog_size_w =
           genAXIWriteData(0, BigInt("04040425", 16).toInt, "b1111", true)
         val prog_size_b = genAXIWriteResp(0)
 
-        val prog_enable_aw = genAXIAddr(0)
+        val prog_enable_aw = genAXIAddr(0)  // offset ENABLE 0x0
         val prog_enable_w = genAXIWriteData(0, 1, "b1111", true)
         val prog_enable_b = genAXIWriteResp(0)
 
-        val prog_done_ar = genAXIAddr(20)
+        val prog_done_ar = genAXIAddr(20) // offset DONE 0x14
         val prog_done_r = genAXIReadData(0, 1, true)
 
-        // Program Source address 109
+        // Program Source address 
+        // dma get source data
         fork {
           dut.io.slave.aw.enqueue(prog_source_aw)
         }.fork {
@@ -81,7 +82,8 @@ class SimpleTopTest
           dut.io.slave.b.expectDequeue(prog_source_b)
         }.join()
 
-        // Program Dest address 1134
+        // Program Dest address 
+        // dma put dest data
         fork {
           dut.io.slave.aw.enqueue(prog_dest_aw)
         }.fork {
@@ -104,6 +106,7 @@ class SimpleTopTest
         }.join()
 
         // Program start and monitor AR, AW, W, drive R, B
+        // start its operation and when done hardware will be cleared
         fork {
           dut.io.slave.aw.enqueue(prog_enable_aw)
         }.fork {

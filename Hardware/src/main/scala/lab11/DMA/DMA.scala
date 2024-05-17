@@ -61,12 +61,12 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
     sReadAddrOffset,
     0.U,
     Seq(
-      0.U  -> mmio_regs(0),
-      4.U  -> mmio_regs(1),
-      8.U  -> mmio_regs(2),
-      12.U -> mmio_regs(3),
-      16.U -> mmio_regs(4),
-      20.U -> mmio_regs(5)
+      0.U  -> mmio_regs(0), // ENABLE
+      4.U  -> mmio_regs(1), // SOURCE_INFO
+      8.U  -> mmio_regs(2), // DEST_INFO
+      12.U -> mmio_regs(3), // DMA_SIZE_CFG
+      16.U -> mmio_regs(4), // no use
+      20.U -> mmio_regs(5)  // DONE
     )
   ))
 
@@ -164,6 +164,7 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
   switch(sReadState) {
     is(sReadIdle) {
       when(io.slave.ar.valid) {
+        // printf("DMA: Read Request\n")
         sReadState := sReadResp
       }
     }

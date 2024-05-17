@@ -1097,7 +1097,7 @@ main(int argc, char** argv) {
 	translate_to_machine_code(mem,imem,argv[1]);
 	printf( "translation done!\n" );
 
-	execute(mem, imem, labels, label_count, start_immediate);
+	// execute(mem, imem, labels, label_count, start_immediate);
 	printf( "Execution done!\n" );
 
 	// for(int i = 0; i < label_count; i++){

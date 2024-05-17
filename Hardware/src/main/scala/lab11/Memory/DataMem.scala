@@ -195,7 +195,7 @@ class DataMem(
     /* Dump Memory */
     printf("\t\t======== Data Memory Dump ========\n")
     printf("\t\tFrom base address %d\n", baseAddr.U)
-    for (i <- 36 until 46) {
+    for (i <- 0 until 46) {
       val indexAddr = baseAddr + i * 4
       val data = memory(i).asSInt
       printf(

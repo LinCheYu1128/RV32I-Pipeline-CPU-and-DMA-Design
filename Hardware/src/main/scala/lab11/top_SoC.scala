@@ -57,7 +57,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val nSlaves: Int = 3
     val DMABaseAddr: Int = 0
     val DMASize: Int = 100
-    val DataMemBaseAddr: Int = 0x8000 // Provide the base address
+    val DataMemBaseAddr: Int = 0x64 // Provide the base address
     val DataMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
       "Height" -> 256, // The Number of bytes
@@ -65,8 +65,8 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     )
     val DataMemLatency: Int = 1
     val DataMemInitFilePath: String =
-      "./src/main/resource/data1.hex" // Provide the file path
-    val GlobalMemBaseAddr: Int = 1124 // Provide the base address
+      "./src/main/resource/data0.hex" // Provide the file path
+    val GlobalMemBaseAddr: Int = 0x8000 // Provide the base address
     val GlobalMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
       "Height" -> 256, // The Number of bytes
@@ -112,16 +112,16 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
       idWidth,
       addrWidth,
       dataWidth,
-      Seq(
-        (Integer.parseInt("8000",16), Integer.parseInt("8000",16)),
-        (Integer.parseInt("100000",16), Integer.parseInt("200000",16)),
-        (Integer.parseInt("300000",16), Integer.parseInt("100000",16))
-      )
       // Seq(
-      //   (SystemConfig.DataMemBaseAddr, SystemConfig.DataMemSize("Size")),
-      //   (SystemConfig.GlobalMemBaseAddr, SystemConfig.GlobalMemSize("Size")),
-      //   (SystemConfig.DMABaseAddr, SystemConfig.DMASize)
+      //   (Integer.parseInt("8000",16), Integer.parseInt("8000",16)),
+      //   (Integer.parseInt("100000",16), Integer.parseInt("200000",16)),
+      //   (Integer.parseInt("0",16), Integer.parseInt("1000",16))
       // )
+      Seq(
+        (SystemConfig.DataMemBaseAddr, SystemConfig.DataMemSize("Size")),
+        (SystemConfig.GlobalMemBaseAddr, SystemConfig.GlobalMemSize("Size")),
+        (Integer.parseInt("0",16), Integer.parseInt("64",16))
+      )
     ) 
   )
 
