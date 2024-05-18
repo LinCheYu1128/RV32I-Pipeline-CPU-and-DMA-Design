@@ -27,7 +27,7 @@ class top(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val nSlaves: Int = 2
     val DMABaseAddr: Int = 0
     val DMASize: Int = 100
-    val LocalMemBaseAddr: Int = 0x8000
+    val LocalMemBaseAddr: Int = 0x64
     val LocalMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
       "Height" -> 256, // The Number of bytes
@@ -36,7 +36,7 @@ class top(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val LocalMemLatency: Int = 1
     val LocalMemInitFilePath: String =
       "./src/main/resource/data0.hex" // Provide the file path
-    val GlobalMemBaseAddr: Int = 1124 // Provide the base address
+    val GlobalMemBaseAddr: Int = 0x8000 // Provide the base address
     val GlobalMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
       "Height" -> 256, // The Number of bytes

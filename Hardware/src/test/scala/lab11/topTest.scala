@@ -52,12 +52,12 @@ class SimpleTopTest
 
         // make requests
         val prog_source_aw = genAXIAddr(4)  // offset SOURCE_INFO 0x4
-        val prog_source_w = genAXIWriteData(0, 1124, "b1111", true)
+        val prog_source_w = genAXIWriteData(0, 0x8000, "b1111", true)
         val prog_source_b = genAXIWriteResp(0)
 
         val prog_dest_aw = genAXIAddr(8)  // offset DEST_INFO 0x8
         val prog_dest_w =
-          genAXIWriteData(0, 0x8000, "b1111", true)
+          genAXIWriteData(0, 0x64, "b1111", true)
         val prog_dest_b = genAXIWriteResp(0)
 
         val prog_size_aw = genAXIAddr(12) // offset DMA_SIZE_CFG 0xC

@@ -57,7 +57,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
     val nSlaves: Int = 3
     val DMABaseAddr: Int = 0
     val DMASize: Int = 100
-    val DataMemBaseAddr: Int = 0x64 // Provide the base address
+    val DataMemBaseAddr: Int = 0x10000 // Provide the base address
     val DataMemSize: Map[String, Int] = Map(
       "Size" -> 1024, // Height x Width
       "Height" -> 256, // The Number of bytes

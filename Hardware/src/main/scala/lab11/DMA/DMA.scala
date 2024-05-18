@@ -309,21 +309,27 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
     switch(sWriteAddrOffset) {
       is(0.U) {
         mmio_regs(0) := sWriteDataReg
+        // printf("DMA: ENABLE: %d\n", sWriteDataReg)
       }
       is(4.U) {
         mmio_regs(1) := sWriteDataReg
+        // printf("DMA: SOURCE_INFO: %d\n", sWriteDataReg)
       }
       is(8.U) {
         mmio_regs(2) := sWriteDataReg
+        // printf("DMA: DEST_INFO: %d\n", sWriteDataReg)
       }
       is(12.U) {
         mmio_regs(3) := sWriteDataReg
+        // printf("DMA: DMA_SIZE_CFG: %d\n", sWriteDataReg)
       }
       is(16.U) {
         mmio_regs(4) := sWriteDataReg
+        // printf("DMA: INST: %d\n", sWriteDataReg)
       }
       is(20.U) {
         mmio_regs(5) := sWriteDataReg
+        // printf("DMA: DONE: %d\n", sWriteDataReg)
       }
     }
   }

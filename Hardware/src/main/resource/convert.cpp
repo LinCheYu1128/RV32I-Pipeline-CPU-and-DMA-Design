@@ -11,7 +11,7 @@ using namespace std;
 // read data from file cat 4 line by line
 int main(){
     ifstream InFile("data.hex");
-    ofstream OutFile("data_c.hex");
+    ofstream OutFile("data1.hex");
     string line;
     int count = 0;
     string data = "";
