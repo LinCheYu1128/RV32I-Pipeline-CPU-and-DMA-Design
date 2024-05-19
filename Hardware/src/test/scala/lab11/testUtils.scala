@@ -18,7 +18,23 @@ trait AXITester {
             _.prot  -> 0.U,
             _.qos   -> 0.U,
             _.region -> 0.U,
-            _.size  -> 2.U
+            _.size  -> 2.U  // 4 bytes(32 bits) per beat
+        )
+        req
+    }
+
+    def genBurstAXIAddr(addr: BigInt, len: Int): Axi4Request = {
+        val req = new Axi4Request(AXI_Config.s_id_width, AXI_Config.addr_width, AXI_Config.data_width).Lit(
+            _.addr -> addr.U,
+            _.burst -> 1.U, // burst mode : FIXED
+            _.cache -> 0.U,
+            _.id    -> 0.U,
+            _.len   -> len.U, // one beat for burst
+            _.lock  -> 0.U,
+            _.prot  -> 0.U,
+            _.qos   -> 0.U,
+            _.region -> 0.U,
+            _.size  -> 2.U  // 4 bytes(32 bits) per beat
         )
         req
     }

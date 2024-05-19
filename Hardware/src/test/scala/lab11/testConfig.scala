@@ -15,3 +15,16 @@ object AXI_Config {
   )
 }
 
+object DataMem_Config {
+  val size: Map[String, Int] = Map(
+    "Width" -> 64,
+    "Height" -> 256
+  )
+  val idWidth = 4
+  val addrWidth = 32
+  val dataWidth = 32
+  val baseAddr = 0x8000
+  val latency = 4
+  val initFilePath = "./src/main/resource/data1.hex"
+}
+

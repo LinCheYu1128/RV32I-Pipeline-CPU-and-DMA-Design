@@ -58,6 +58,11 @@ class DataMem(
   val rLatencyCounter = RegInit(0.U(8.W))
   val wLatencyCounter = RegInit(0.U(8.W))
 
+  val rBurstCounter = RegInit(0.U(8.W))
+  val rBurstLen = RegInit(0.U(8.W))
+  val wBurstCounter = RegInit(0.U(8.W))
+  val wBurstLen = RegInit(0.U(8.W))
+
   switch(readState) {
     is(sRead) {
       when(io.slave.ar.fire) {
@@ -75,7 +80,8 @@ class DataMem(
       }
     }
     is(sResp) {
-      when(io.slave.r.fire) {
+      when(io.slave.r.fire && io.slave.r.bits.last) {
+      // when(io.slave.r.fire) {
         readState := sRead
       }
     }
@@ -86,6 +92,8 @@ class DataMem(
     io.slave.r.valid := false.B
     rAddrOffset := ((io.slave.ar.bits.addr - baseAddr.U) & ~(3.U(width.W))) >> 2.U
     readID := io.slave.ar.bits.id
+    rBurstLen := io.slave.ar.bits.len
+    rBurstCounter := 0.U
   }
   .elsewhen(readState === sRLatency) {
     rLatencyCounter := rLatencyCounter + 1.U
@@ -94,10 +102,13 @@ class DataMem(
     rLatencyCounter := 0.U
     io.slave.ar.ready := false.B
     io.slave.r.valid := true.B
-    io.slave.r.bits.data := memory(rAddrOffset)
+    io.slave.r.bits.data := memory(rAddrOffset + rBurstCounter)
     io.slave.r.bits.id := readID
     io.slave.r.bits.resp := 0.U
-    io.slave.r.bits.last := true.B
+    io.slave.r.bits.last := Mux(rBurstCounter === rBurstLen, true.B, false.B)
+    when(io.slave.r.fire) {
+      rBurstCounter := rBurstCounter + 1.U
+    }
   }
 
   switch(writeState) {
@@ -105,29 +116,20 @@ class DataMem(
       writeState := sReady
     }
     is(sReady) {
-      when(io.slave.aw.valid && io.slave.w.valid) {
-        when(latency.U === 1.U) {
-          writeState := sFinish
-        }.otherwise {
-          writeState := sWLatency
-        }
-      }
-      .elsewhen(io.slave.aw.valid) {
-        writeState := sWaitData
+      when(io.slave.aw.valid) {
+        writeState := sWLatency
       }
     }
     is(sWaitData) {
       when(io.slave.w.valid) {
-        when(latency.U === 1.U) {
+        when(io.slave.w.bits.last) {
           writeState := sFinish
-        }.otherwise {
-          writeState := sWLatency
         }
       }
     }
     is(sWLatency) {
       when(wLatencyCounter === (latency - 1).U){
-        writeState := sFinish
+        writeState := sWaitData
       }
     }
     is(sFinish) {
@@ -143,7 +145,6 @@ class DataMem(
       writeData(x) := io.slave.w.bits.data(x * 8 + 7, x * 8)
     }.otherwise {
       writeData(x) := memory(wAddrOffset)(x * 8 + 7, x * 8)
-      // writeData(x) := 0.U
     }
   }
 
@@ -152,37 +153,24 @@ class DataMem(
     io.slave.w.ready := false.B
     io.slave.b.bits.resp := 0.U
     io.slave.b.valid := false.B
-  }
-  .elsewhen(writeState === sReady) {
+    writeAddressReg := wAddrOffset.asUInt
+  }.elsewhen(writeState === sReady){
     io.slave.aw.ready := true.B
-    io.slave.w.ready := true.B
-    when(io.slave.aw.valid && io.slave.w.valid) {
-      memory(wAddrOffset) := writeData.asUInt()
-      // printf("Write Data: %x, %x + %x*4\n", writeData.asUInt(), baseAddr.U, writeAddressReg)
-      writeAddressReg := wAddrOffset
-      writeID := io.slave.aw.bits.id
-    }
-    .elsewhen(io.slave.aw.valid) {
-      writeAddressReg := wAddrOffset
-      writeID := io.slave.aw.bits.id
-    }
-    io.slave.b.bits.resp := 0.U
-    io.slave.b.valid := false.B
-
-  }
-  .elsewhen(writeState === sWaitData) {
+    writeAddressReg := wAddrOffset.asUInt
+  }.elsewhen(writeState === sWLatency){
+    io.slave.aw.ready := false.B
+    wLatencyCounter := wLatencyCounter + 1.U
+  }.elsewhen(writeState === sWaitData){
     io.slave.aw.ready := false.B
     io.slave.w.ready := true.B
     io.slave.b.bits.resp := 0.U
     io.slave.b.valid := false.B
-    when(io.slave.w.valid) {
+    when(io.slave.w.fire) {
       memory(writeAddressReg) := writeData.asUInt()
+      writeAddressReg := writeAddressReg + 1.U
+      wBurstCounter := wBurstCounter + 1.U
     }
-  }
-  .elsewhen(writeState === sWLatency) {
-    wLatencyCounter := wLatencyCounter + 1.U
-  }
-  .elsewhen(writeState === sFinish) {
+  }.elsewhen(writeState === sFinish) {
     wLatencyCounter := 0.U
     io.slave.aw.ready := false.B
     io.slave.w.ready := false.B

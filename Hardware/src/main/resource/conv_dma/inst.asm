@@ -24,7 +24,7 @@ lw t2, 0(t1)
 beq t2, x0, wait_dma1
 sw x0, 0(t1)
 lui x02, 0x00000000
-addi x02, x02, 0x00000068
+addi x02, x02, 0x00000004
 lui x12, 0x00000000
 addi x12, x12, 0x00000008
 lui x13, 0x00000000
@@ -61,6 +61,36 @@ lw s8, 12(a7)
 lw s9, 18(a7)
 lw s10, 24(a7)
 lw s11, 30(a7)
+lui x08, 0x00000010
+addi x08, x08, 0x00000090
+lui x19, 0x00000008
+addi x19, x19, 0x00000090
+lui x06, 0x00000000
+addi x06, x06, 0x00000004
+sw s0, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x00000008
+sw s3, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x0000000c
+lui x07, 0x00004040
+addi x07, x07, 0x00000425
+sw t2, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x00000000
+lui x07, 0x00000000
+addi x07, x07, 0x00000001
+sw t2, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x00000014
+lw t2, 0(t1)
+beq t2, x0, wait_dma2
+sw x0, 0(t1)
+nop zero, zero, 0
+nop zero, zero, 0
+nop zero, zero, 0
+nop zero, zero, 0
+nop zero, zero, 0
 hcf
 srli s0, a3, 1
 lui x05, 0x00000000
@@ -105,7 +135,6 @@ blt t1, a4, loop2
 addi t0, t0, 1
 blt t0, a4, loop1
 jalr x0, x1, x0
-hcf
 hcf
 nop
 nop

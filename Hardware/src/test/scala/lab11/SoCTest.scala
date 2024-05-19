@@ -186,12 +186,12 @@ class top_SoCTest(dut: top_SoC)
   /* Lab 9_3 performance counter */
   println("Local Mem:\n")
   poke(dut.io.localMemDump, true)
-  step(2)
+  step(1)
   poke(dut.io.localMemDump, false)
   step(10)
   println("Global Mem:\n")
   poke(dut.io.globalMemDump, true)
-  step(2)
+  step(1)
   poke(dut.io.globalMemDump, false)
 }
 
