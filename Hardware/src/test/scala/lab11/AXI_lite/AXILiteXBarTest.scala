@@ -191,19 +191,10 @@ class AXILiteXBarTest
           )
       }.fork {
         for (i <- 0 until 2) {
-          fork
-            .withRegion(Monitor) {
-              while (
-                !dut.io
-                  .slaves(0)
-                  .aw
-                  .valid
-                  .peek()
-                  .litToBoolean || !dut.io.slaves(0).w.valid.peek().litToBoolean
-              )
+          fork.withRegion(Monitor) {
+              while (!dut.io.slaves(0).aw.valid.peek().litToBoolean || !dut.io.slaves(0).w.valid.peek().litToBoolean)
                 dut.clock.step(1)
-            }
-            .joinAndStep(dut.clock)
+            }.joinAndStep(dut.clock)
           dut.io.slaves(0).b.enqueue(genAXIWriteResp(0))
         }
       }.fork {

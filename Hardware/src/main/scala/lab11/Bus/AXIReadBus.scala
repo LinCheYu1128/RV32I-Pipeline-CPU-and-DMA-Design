@@ -30,8 +30,11 @@ class AXIReadBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val dat
   val read_addr_reg_id = RegInit(0.U(idWidth.W))     // read id register
   val read_addr_reg_size = RegInit(0.U(3.W))         // read size register
   val read_addr_reg_valid = RegInit(false.B)         // read address register
+  val read_burst = RegInit(0.U(2.W))                 // read burst register
+  val read_burst_len = RegInit(0.U(8.W))             // read burst length register
   val outstanding = RegInit(false.B) // outstanding request refers to a data request that has not been resolved or serviced yet
 
+  val burst_cnt = RegInit(0.U(8.W)) // burst counter
 
   // signal initialization
   for (i <- 0 until mSlaves) {
@@ -39,9 +42,9 @@ class AXIReadBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val dat
     io.slave(i).readAddr.bits.addr := 0.U
     io.slave(i).readAddr.bits.id := 0.U
     io.slave(i).readAddr.bits.region := DontCare
-    io.slave(i).readAddr.bits.len := DontCare
+    io.slave(i).readAddr.bits.len := 0.U
     io.slave(i).readAddr.bits.size := 0.U
-    io.slave(i).readAddr.bits.burst := DontCare
+    io.slave(i).readAddr.bits.burst := 0.U 
     io.slave(i).readAddr.bits.lock := DontCare
     io.slave(i).readAddr.bits.cache := DontCare
     io.slave(i).readAddr.bits.prot := DontCare
@@ -64,6 +67,8 @@ class AXIReadBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val dat
     read_addr_reg_id := io.master.readAddr.bits.id
     read_addr_reg_size := io.master.readAddr.bits.size
     read_addr_reg_valid := true.B
+    read_burst := io.master.readAddr.bits.burst
+    read_burst_len := io.master.readAddr.bits.len
   }
 
   // when slave(read mux) is ready for the request, set valid to 0
@@ -85,7 +90,10 @@ class AXIReadBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val dat
     io.slave(read_port_reg).readData.ready := io.master.readData.ready
     io.slave(read_port_reg).readAddr.bits.size := read_addr_reg_size
     io.slave(read_port_reg).readAddr.bits.id := read_addr_reg_id
-    when(io.master.readData.fire) {
+    io.slave(read_port_reg).readAddr.bits.burst := read_burst
+    io.slave(read_port_reg).readAddr.bits.len := read_burst_len
+    // when(io.master.readData.fire && burst_cnt === 0.U) {
+    when(io.slave(read_port_reg).readData.bits.last){
       outstanding := false.B
     }
   }

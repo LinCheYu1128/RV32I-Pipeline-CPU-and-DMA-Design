@@ -49,14 +49,14 @@ class AXISlaveReadMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, v
 
   // signal initialization
   io.out.readAddr.bits.qos := DontCare
-  io.out.readAddr.bits.len := DontCare
+  io.out.readAddr.bits.len := 0.U
   io.out.readAddr.bits.cache := DontCare
   io.out.readAddr.bits.lock := DontCare
   io.out.readAddr.bits.size := 0.U
   io.out.readAddr.bits.id := 0.U
   io.out.readAddr.bits.prot := DontCare
   io.out.readAddr.bits.region := DontCare
-  io.out.readAddr.bits.burst := DontCare
+  io.out.readAddr.bits.burst := 0.U
   io.out.readData.ready := false.B
   arbiter.io.out.ready := true.B
 
@@ -65,7 +65,7 @@ class AXISlaveReadMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, v
     io.in(i).readData.valid := false.B
     io.in(i).readData.bits.resp := 0.U
     io.in(i).readData.bits.id := 0.U
-    io.in(i).readData.bits.last := true.B
+    io.in(i).readData.bits.last := false.B
   }
 
   for (i <- 0 until nMasters) {
