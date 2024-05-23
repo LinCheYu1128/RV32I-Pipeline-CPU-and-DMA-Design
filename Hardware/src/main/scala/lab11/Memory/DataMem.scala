@@ -128,14 +128,12 @@ class DataMem(
       }
     }
     is(sWLatency) {
-      // when(wLatencyCounter === (latency - 1).U){
+      when(wLatencyCounter === (latency - 1).U){
         writeState := sWaitData
-      // }
+      }
     }
     is(sFinish) {
-      // when(io.slave.b.ready) {
         writeState := sReady
-      // }
     }
   }
 
@@ -161,9 +159,9 @@ class DataMem(
     io.slave.aw.ready := true.B
     writeAddressReg := wAddrOffset.asUInt
     wBurstLen := io.slave.aw.bits.len
+    wLatencyCounter := (latency - 1).U 
   }.elsewhen(writeState === sWLatency){
     io.slave.aw.ready := false.B
-    wLatencyCounter := wLatencyCounter + 1.U
   }.elsewhen(writeState === sWaitData){
     io.slave.aw.ready := false.B
     io.slave.w.ready := true.B
