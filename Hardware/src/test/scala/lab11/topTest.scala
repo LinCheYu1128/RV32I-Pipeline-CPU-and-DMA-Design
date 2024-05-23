@@ -43,6 +43,7 @@ class SimpleTopTest
           VerilatorBackendAnnotation
         )
       ) { dut =>
+        dut.clock.setTimeout(100000000)
         // init clocks
         dut.io.slave.aw.initSource().setSourceClock(dut.clock)
         dut.io.slave.w.initSource().setSourceClock(dut.clock)

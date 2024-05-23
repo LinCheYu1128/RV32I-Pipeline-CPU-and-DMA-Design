@@ -1,3 +1,28 @@
+lui x08, 0x00000008
+addi x08, x08, 0x00000000
+lui x19, 0x00000010
+addi x19, x19, 0x00000000
+lui x06, 0x00000000
+addi x06, x06, 0x00000004
+sw s0, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x00000008
+sw s3, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x0000000c
+lui x07, 0x00004040
+addi x07, x07, 0x00000425
+sw t2, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x00000000
+lui x07, 0x00000000
+addi x07, x07, 0x00000001
+sw t2, 0(t1)
+lui x06, 0x00000000
+addi x06, x06, 0x00000014
+lw t2, 0(t1)
+beq t2, x0, wait_dma1
+sw x0, 0(t1)
 lui x02, 0x00000000
 addi x02, x02, 0x00000004
 lui x12, 0x00000000
@@ -6,12 +31,22 @@ lui x13, 0x00000000
 addi x13, x13, 0x00000003
 lui x14, 0x00000000
 addi x14, x14, 0x00000006
+lui x19, 0x00000008
+addi x19, x19, 0x00000000
+lui x20, 0x00000010
+addi x20, x20, 0x00000000
 lui x15, 0x00000008
 addi x15, x15, 0x00000000
+sub a5, a5, s3
+add a5, a5, s4
 lui x16, 0x00000008
 addi x16, x16, 0x00000080
+sub a6, a6, s3
+add a6, a6, s4
 lui x17, 0x00000008
 addi x17, x17, 0x00000092
+sub a7, a7, s3
+add a7, a7, s4
 addi sp, sp, -4
 sw ra, 0(sp)
 jal ra, conv2d

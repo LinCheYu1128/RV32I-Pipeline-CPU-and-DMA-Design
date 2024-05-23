@@ -214,7 +214,7 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
   when(mState === mWriteSend) {
     when(io.master.aw.fire) {
       // count how many write requests are sent
-      request_counter := request_counter + 1.U
+      request_counter := request_counter + io.master.aw.bits.len.asUInt
     }
   }
 
@@ -276,7 +276,7 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
   }
 
   // check DMA operation completion and set signals accordingly
-  when(mState === mWriteResp && request_counter === mmio_size_cfg(7,0)) {
+  when(mState === mWriteResp && (request_counter+1.U) === mmio_size_cfg(7,0)) {
     request_counter := 0.U
     mmio_enable := 0.U
     mmio_done   := 1.U

@@ -128,18 +128,21 @@ class DataMem(
       }
     }
     is(sWLatency) {
-      when(wLatencyCounter === (latency - 1).U){
+      // when(wLatencyCounter === (latency - 1).U){
         writeState := sWaitData
-      }
+      // }
     }
     is(sFinish) {
-      when(io.slave.b.ready) {
+      // when(io.slave.b.ready) {
         writeState := sReady
-      }
+      // }
     }
   }
 
   val writeData = WireDefault(VecInit(Seq.fill(dataWidth / 8)(0.U(8.W))))
+  val writeDataReg = RegNext(writeData)
+  val writeDataRegReg = RegNext(writeDataReg)
+
   List.range(0, dataWidth / 8).map { x =>
     when(io.slave.w.bits.strb(x) === 1.U) {
       writeData(x) := io.slave.w.bits.data(x * 8 + 7, x * 8)
@@ -157,6 +160,7 @@ class DataMem(
   }.elsewhen(writeState === sReady){
     io.slave.aw.ready := true.B
     writeAddressReg := wAddrOffset.asUInt
+    wBurstLen := io.slave.aw.bits.len
   }.elsewhen(writeState === sWLatency){
     io.slave.aw.ready := false.B
     wLatencyCounter := wLatencyCounter + 1.U
@@ -166,7 +170,7 @@ class DataMem(
     io.slave.b.bits.resp := 0.U
     io.slave.b.valid := false.B
     when(io.slave.w.fire) {
-      memory(writeAddressReg) := writeData.asUInt()
+      memory(writeAddressReg) := Mux(wBurstLen === 0.U, writeData.asUInt(), writeDataRegReg.asUInt())
       writeAddressReg := writeAddressReg + 1.U
       wBurstCounter := wBurstCounter + 1.U
     }
@@ -177,23 +181,37 @@ class DataMem(
     io.slave.b.bits.resp := 0.U
     io.slave.b.bits.id := writeID
     io.slave.b.valid := true.B
+    when(wBurstLen =/= 0.U) {
+      memory(writeAddressReg) := writeDataRegReg.asUInt()
+      memory(writeAddressReg + 1.U) := writeDataReg.asUInt()
+    }
   }
 
   when(io.dump) {
     /* Dump Memory */
     printf("\t\t======== Data Memory Dump ========\n")
     printf("\t\tFrom base address %d\n", baseAddr.U)
-    // for (i <- 0 until 20) {
-    for (i <- 36 until 46) {
-      val indexAddr = baseAddr + i * 4
-      val data = memory(i)
+    
+    for (i <- 0 until 10) {
+      val indexAddr = baseAddr + (i+36) * 4
+      val data = memory(i+36)
       printf(
-        "\t\tDataMem[%d] (address = %d(%x)) = 0x%x (%d)\n", i.U, indexAddr.asUInt, indexAddr.asUInt, data.asSInt, data.asSInt
+        "\t\tDataMem[%d] (address = %d(%x)) = 0x%x (%d)\n", i.U+36.U, indexAddr.asUInt, indexAddr.asUInt, data.asSInt, data.asSInt
       )
     }
+    // for (i <- 30 until 37) {
+    //   val indexAddr = baseAddr + i * 4
+    //   val data = memory(i)
+    //   printf(
+    //     "\t\tDataMem[%d] (address = %d(%x)) = 0x%x (%d)\n", i.U, indexAddr.asUInt, indexAddr.asUInt, data.asSInt, data.asSInt
+    //   )
+    // }
     printf("\n")
+    
   }
 
 }
+
+
 
 
