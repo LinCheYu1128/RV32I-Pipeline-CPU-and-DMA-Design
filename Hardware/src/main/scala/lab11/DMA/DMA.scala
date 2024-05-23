@@ -70,14 +70,17 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
     )
   ))
 
+  val cache_buffer = RegInit(VecInit(Seq.fill(37)(0.U(dataWidth.W))))
+  val cache_index  = RegInit(0.U(6.W))
+  
   // IO signals
   io.Hcf := mmio_done
 
   // Master interface signal
   io.master.aw.valid       := mState === mWriteSend && !mWriteAddrSent
   io.master.aw.bits.addr   := 0.U
-  io.master.aw.bits.burst  := 0.U
-  io.master.aw.bits.len    := 0.U
+  io.master.aw.bits.burst  := 1.U
+  io.master.aw.bits.len    := 36.U
   io.master.aw.bits.size   := 2.U
   io.master.aw.bits.cache  := 0.U
   io.master.aw.bits.id     := 0.U
@@ -88,8 +91,8 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
 
   io.master.ar.valid       := mState === mReadSend
   io.master.ar.bits.addr   := 0.U
-  io.master.ar.bits.burst  := 0.U
-  io.master.ar.bits.len    := 0.U
+  io.master.ar.bits.burst  := 1.U
+  io.master.ar.bits.len    := 36.U //will send 37 read requests
   io.master.ar.bits.size   := 2.U
   io.master.ar.bits.cache  := 0.U
   io.master.ar.bits.id     := 0.U
@@ -99,9 +102,9 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
   io.master.ar.bits.region := 0.U
 
   io.master.w.valid     := mState === mWriteSend && !mWriteDataSent
-  io.master.w.bits.data := data_buffer
+  io.master.w.bits.data := 0.U
   io.master.w.bits.strb := "b1111".U
-  io.master.w.bits.last := true.B
+  io.master.w.bits.last := Mux(mState === mWriteSend && cache_index === 36.U, true.B, false.B)
 
   io.master.r.ready := mState === mReadResp
 
@@ -121,6 +124,20 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
   io.slave.b.valid     := sWriteState === sWriteResp
   io.slave.b.bits.id   := sWriteIDReg
   io.slave.b.bits.resp := 0.U
+
+  when(mState===mReadResp){
+    when(io.master.r.valid){
+      cache_buffer(cache_index) := rData.asUInt >> (source_offset << 3.U)
+      cache_index := Mux(io.master.r.bits.last, 0.U, cache_index + 1.U)
+    }
+  }.elsewhen(mState===mWriteSend){
+    when(io.master.w.fire){
+      cache_index := cache_index + 1.U
+    }
+  }
+  .otherwise{
+    cache_index := 0.U
+  }
 
   // Mater State Controller
   switch(mState) {
@@ -142,13 +159,13 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
       // whe tne RValid is assert, the data response returns and
       // DMA starts to write the data to the desitnation, issuing
       // write request
-      when(io.master.r.valid) {
+      when(io.master.r.valid && io.master.r.bits.last) {
         mState := mWriteSend
       }
     }
     is(mWriteSend) {
       // when all the write data are sent, wait for write response
-      when(mWriteAddrSent && mWriteDataSent) {
+      when(mWriteAddrSent && io.master.w.bits.last) {
         mState := mWriteResp
       }
     }
@@ -254,7 +271,7 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
     io.master.w.bits.strb := mask_width << dest_offset
 
     // adjust data to match write config(destination width)
-    io.master.w.bits.data := data_buffer << (dest_offset << 3.U)
+    io.master.w.bits.data := cache_buffer(cache_index)//data_buffer << (dest_offset << 3.U)
 
   }
 
@@ -267,7 +284,7 @@ class DMA(idWidth: Int, addrWidth: Int, dataWidth: Int, baseAddr: BigInt)
 
   // check Write Addr and Data status
   when(mState === mWriteSend) {
-    when(io.master.w.ready) {
+    when(io.master.w.ready && io.master.w.bits.last) {
       mWriteDataSent := true.B
     }
     when(io.master.aw.ready) {

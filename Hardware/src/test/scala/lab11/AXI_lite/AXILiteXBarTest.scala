@@ -227,40 +227,16 @@ class AXILiteXBarTest
         dut.io.slaves(0).ar.expectDequeue(genAXIAddr(BigInt("9008", 16).toInt))
         dut.io.slaves(0).ar.expectDequeue(genAXIAddr(BigInt("9024", 16).toInt))
       }.fork {
-        dut.io
-          .masters(0)
-          .r
-          .expectDequeue(genAXIReadData(0, BigInt("00010203", 16).toInt, true))
-        dut.io
-          .masters(0)
-          .r
-          .expectDequeue(genAXIReadData(0, BigInt("08090a0b", 16).toInt, true))
+        dut.io.masters(0).r.expectDequeue(genAXIReadData(0, BigInt("00010203", 16).toInt, true))
+        dut.io.masters(0).r.expectDequeue(genAXIReadData(0, BigInt("08090a0b", 16).toInt, true))
       }.fork {
-        dut.io
-          .masters(1)
-          .r
-          .expectDequeue(genAXIReadData(0, BigInt("04050607", 16).toInt, true))
-        dut.io
-          .masters(1)
-          .r
-          .expectDequeue(genAXIReadData(0, BigInt("0c0d0e0f", 16).toInt, true))
+        dut.io.masters(1).r.expectDequeue(genAXIReadData(0, BigInt("04050607", 16).toInt, true))
+        dut.io.masters(1).r.expectDequeue(genAXIReadData(0, BigInt("0c0d0e0f", 16).toInt, true))
       }.fork {
-        dut.io
-          .slaves(0)
-          .r
-          .enqueue(genAXIReadData(0, BigInt("00010203", 16).toInt, true))
-        dut.io
-          .slaves(0)
-          .r
-          .enqueue(genAXIReadData(0, BigInt("04050607", 16).toInt, true))
-        dut.io
-          .slaves(0)
-          .r
-          .enqueue(genAXIReadData(0, BigInt("08090a0b", 16).toInt, true))
-        dut.io
-          .slaves(0)
-          .r
-          .enqueue(genAXIReadData(0, BigInt("0c0d0e0f", 16).toInt, true))
+        dut.io.slaves(0).r.enqueue(genAXIReadData(0, BigInt("00010203", 16).toInt, true))
+        dut.io.slaves(0).r.enqueue(genAXIReadData(0, BigInt("04050607", 16).toInt, true))
+        dut.io.slaves(0).r.enqueue(genAXIReadData(0, BigInt("08090a0b", 16).toInt, true))
+        dut.io.slaves(0).r.enqueue(genAXIReadData(0, BigInt("0c0d0e0f", 16).toInt, true))
       }.fork {
         dut.io.masters(0).ar.enqueue(genAXIAddr(BigInt("9000", 16).toInt))
         dut.io.masters(0).ar.enqueue(genAXIAddr(BigInt("9008", 16).toInt))
@@ -282,30 +258,10 @@ class AXILiteXBarTest
         dut.io.slaves(1).aw.expectDequeue(genAXIAddr(BigInt("19024", 16).toInt))
         dut.io.slaves(1).aw.expectDequeue(genAXIAddr(BigInt("19008", 16).toInt))
       }.fork {
-        dut.io
-          .slaves(1)
-          .w
-          .expectDequeue(
-            genAXIWriteData(0, BigInt("08090a0b", 16).toInt, "b1111", true)
-          )
-        dut.io
-          .slaves(1)
-          .w
-          .expectDequeue(
-            genAXIWriteData(0, BigInt("00010203", 16).toInt, "b1111", true)
-          )
-        dut.io
-          .slaves(1)
-          .w
-          .expectDequeue(
-            genAXIWriteData(0, BigInt("0c0d0e0f", 16).toInt, "b1111", true)
-          )
-        dut.io
-          .slaves(1)
-          .w
-          .expectDequeue(
-            genAXIWriteData(0, BigInt("04050607", 16).toInt, "b1111", true)
-          )
+        dut.io.slaves(1).w.expectDequeue(genAXIWriteData(0, BigInt("08090a0b", 16).toInt, "b1111", true))
+        dut.io.slaves(1).w.expectDequeue(genAXIWriteData(0, BigInt("00010203", 16).toInt, "b1111", true))
+        dut.io.slaves(1).w.expectDequeue(genAXIWriteData(0, BigInt("0c0d0e0f", 16).toInt, "b1111", true))
+        dut.io.slaves(1).w.expectDequeue(genAXIWriteData(0, BigInt("04050607", 16).toInt, "b1111", true))
       }.fork {
         dut.io.masters(0).b.expectDequeue(genAXIWriteResp(0))
         dut.io.masters(0).b.expectDequeue(genAXIWriteResp(0))
@@ -319,51 +275,23 @@ class AXILiteXBarTest
         dut.io.masters(1).aw.enqueue(genAXIAddr(BigInt("19016", 16).toInt))
         dut.io.masters(1).aw.enqueue(genAXIAddr(BigInt("19024", 16).toInt))
       }.fork {
-        dut.io
-          .masters(0)
-          .w
-          .enqueue(
-            genAXIWriteData(0, BigInt("00010203", 16).toInt, "b1111", true)
-          )
-        dut.io
-          .masters(0)
-          .w
-          .enqueue(
+        dut.io.masters(0).w.enqueue(genAXIWriteData(0, BigInt("00010203", 16).toInt, "b1111", true))
+        dut.io.masters(0).w.enqueue(
             genAXIWriteData(0, BigInt("04050607", 16).toInt, "b1111", true)
           )
       }.fork {
-        dut.io
-          .masters(1)
-          .w
-          .enqueue(
-            genAXIWriteData(0, BigInt("08090a0b", 16).toInt, "b1111", true)
-          )
-        dut.io
-          .masters(1)
-          .w
-          .enqueue(
-            genAXIWriteData(0, BigInt("0c0d0e0f", 16).toInt, "b1111", true)
-          )
+        dut.io.masters(1).w.enqueue(genAXIWriteData(0, BigInt("08090a0b", 16).toInt, "b1111", true))
+        dut.io.masters(1).w.enqueue(genAXIWriteData(0, BigInt("0c0d0e0f", 16).toInt, "b1111", true))
       }.fork {
         for (i <- 0 until 4) {
-          fork
-            .withRegion(Monitor) {
-              while (
-                !dut.io
-                  .slaves(1)
-                  .aw
-                  .valid
-                  .peek()
-                  .litToBoolean || !dut.io.slaves(1).w.valid.peek().litToBoolean
-              )
+          fork.withRegion(Monitor) {
+              while (!dut.io.slaves(1).aw.valid.peek().litToBoolean || !dut.io.slaves(1).w.valid.peek().litToBoolean)
                 dut.clock.step(1)
-            }
-            .joinAndStep(dut.clock)
+            }.joinAndStep(dut.clock)
           dut.io.slaves(1).b.enqueue(genAXIWriteResp(0))
         }
       }.join()
 
-      dut.clock.step(1)
 
       println("--------")
       println("[Test 5] AXI cross bar READ & WRITE same slave at the same time")

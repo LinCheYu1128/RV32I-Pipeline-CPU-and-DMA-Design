@@ -5,6 +5,7 @@ import chisel3.util._
 import chisel3.experimental.BundleLiterals._
 import AXI._
 
+
 class writeOut(val idWidth: Int, val addrWidth: Int, val dataWidth: Int) extends Bundle {
   val writeAddr = Decoupled(new Axi4Request(idWidth, addrWidth, dataWidth)) // output address to slave for writing data
   val writeData = Decoupled(new Axi4WriteData(dataWidth))                   // output data to write into slave
@@ -26,7 +27,7 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
   val mask = WireDefault(VecInit(Seq.fill(nMasters)(1.U(1.W))))
 
   // state enum
-  val sIdle :: sWaitData :: sWaitResp :: sReturn :: Nil = Enum(4)
+  val sIdle :: sWaitData :: sWaitResp :: sReturn:: Nil = Enum(4)
 
   // state register
   val state = RegInit(sIdle)
@@ -103,11 +104,14 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
       }
     }
     is(sWaitResp){
-      when(io.out.writeResp.fire){
+      when(io.out.writeResp.fire && address_reg.len===0.U){
+        state := sReturn
+      }
+      .elsewhen(io.in(chosen_reg).writeData.fire && io.in(chosen_reg).writeData.bits.last){
         state := sReturn
       }
     }
-    is(sReturn){
+    is(sReturn){ // return response
       when(io.in(chosen_reg).writeResp.fire){
         state := sIdle
       }
@@ -117,9 +121,8 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
   when(state === sIdle){
     // set all mask bits to 1 in the idle state; otherwise, set them to 0
     mask.foreach(_ := 1.U)
-
     when(arbiter.io.out.valid){
-      io.in(arbiter.io.chosen).writeData.ready := true.B
+      io.in(arbiter.io.chosen).writeData.ready := true.B//io.out.writeData.ready
       chosen_reg := arbiter.io.chosen                              // save arbitration chosen port
       address_reg <> io.in(arbiter.io.chosen).writeAddr.bits       // save chosen port write address
       aw_determined := true.B
@@ -138,25 +141,39 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
     when(io.out.writeAddr.fire){
       aw_determined := false.B
     }
-    io.in(chosen_reg).writeData.ready := true.B
+    io.in(chosen_reg).writeData.ready := true.B//io.out.writeData.ready
     io.out.writeResp.ready := false.B
   }
   .elsewhen(state === sWaitResp){  // In this state, handle write address/data handshaking
-      mask.foreach(_ := 0.U)       // wait for write response
-      when(io.out.writeAddr.fire){
-        aw_determined := false.B
-      }
+    mask.foreach(_ := 0.U)       // wait for write response
+    when(address_reg.len===0.U){
       when(io.out.writeData.fire){
         w_determined := false.B
       }
-      when(io.out.writeResp.fire){
-        resp_reg <> io.out.writeResp.bits
-      }
       io.out.writeResp.ready := true.B
+    }.otherwise{
+      io.in(chosen_reg).writeData.ready := true.B
+      when(io.in(chosen_reg).writeData.fire){
+        data_reg <> io.in(chosen_reg).writeData.bits
+      }
+      io.out.writeResp.ready := false.B
+    }
+    when(io.out.writeAddr.fire){
+      aw_determined := false.B
+    }
+    when(io.out.writeResp.fire){
+      resp_reg <> io.out.writeResp.bits
+    }
   }
-  .elsewhen(state === sReturn){   // In this state, handle write response handshaking between mux and chosen master
+  .elsewhen(state === sReturn){   
     mask.foreach(_ := 0.U)
     io.in(chosen_reg).writeResp.valid := true.B
+    when(address_reg.len=/=0.U){
+      w_determined := false.B
+      data_reg.last := false.B
+      data_reg.data := 0.U
+      io.out.writeResp.ready := true.B
+    }
   }
 
   io.out.writeData.bits <> data_reg

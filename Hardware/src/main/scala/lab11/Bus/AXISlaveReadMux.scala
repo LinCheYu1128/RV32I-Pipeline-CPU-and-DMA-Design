@@ -24,7 +24,7 @@ class AXISlaveReadMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, v
   val mask = WireDefault(VecInit(Seq.fill(nMasters)(1.U(1.W))))
 
   // state enum
-  val sIdle :: sWaitResp :: sReturn :: Nil = Enum(3)
+  val sIdle :: sWaitResp :: sReturn :: sReturnLast :: Nil = Enum(4)
 
   // state register
   val state = RegInit(sIdle)
@@ -83,11 +83,19 @@ class AXISlaveReadMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, v
       }
     }
     is(sWaitResp){
-      when(io.out.readData.fire){ // after slave receiving the return data, transfer to the next state
+      when(io.out.readData.fire && address_reg.len===0.U){ // after slave receiving the return data, transfer to the next state
+        state := sReturnLast
+      }
+      .elsewhen(io.out.readData.fire){ // after slave receiving the return data, transfer to the next state
         state := sReturn
       }
     }
     is(sReturn){
+      when(io.in(chosen_reg).readData.fire && io.out.readData.bits.last){ // after the master which gets the grant for arbitration receives the return data, transfer to the idle state
+        state := sReturnLast
+      }
+    }
+    is(sReturnLast){
       when(io.in(chosen_reg).readData.fire){ // after the master which gets the grant for arbitration receives the return data, transfer to the idle state
         state := sIdle
       }
@@ -114,6 +122,17 @@ class AXISlaveReadMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, v
       io.out.readData.ready := true.B
   }
   .elsewhen(state === sReturn){  // In sReturn state, waiting for master side(read bus) handshaking
+    when(io.out.readData.fire){
+      data_reg <> io.out.readData.bits
+    }
+    io.out.readData.ready := true.B
+    mask.foreach(_ := 0.U)
+    io.in(chosen_reg).readData.valid := true.B
+  }
+  .elsewhen(state === sReturnLast){  // In sReturnLast state, waiting for master side(read bus) handshaking
+    // data_reg <> io.out.readData.bits
+    data_reg.last := false.B
+    data_reg.data := 0.U
     mask.foreach(_ := 0.U)
     io.in(chosen_reg).readData.valid := true.B
   }

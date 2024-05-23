@@ -34,6 +34,8 @@ class AXIWriteBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val da
   val write_addr_reg_valid = RegInit(false.B)               // address valid register
   val write_addr_reg_id = RegInit(0.U(idWidth.W))           // id register
   val write_addr_reg_size = RegInit(0.U(3.W))               // size register
+  val write_addr_reg_burst = RegInit(0.U(2.W))              // burst register
+  val write_addr_reg_burst_len = RegInit(0.U(8.W))          // burst length register
 
   val write_data_reg = RegInit(0.U(dataWidth.W))            // data register
   val write_data_reg_valid = RegInit(false.B)               // data valid register
@@ -84,25 +86,29 @@ class AXIWriteBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val da
     write_addr_reg_valid := true.B
     write_addr_reg_id := io.master.writeAddr.bits.id
     write_addr_reg_size := io.master.writeAddr.bits.size
+    write_addr_reg_burst := io.master.writeAddr.bits.burst
+    write_addr_reg_burst_len := io.master.writeAddr.bits.len
   }
   when(io.master.writeData.fire) {
-    w_outstanding := true.B
+    // w_outstanding := true.B
     write_data_reg_strb := io.master.writeData.bits.strb
     write_data_reg := io.master.writeData.bits.data
     write_data_reg_valid := true.B
     write_data_reg_last := io.master.writeData.bits.last
   }
-
+  when(io.master.writeData.fire && io.master.writeData.bits.last) {
+    w_outstanding := true.B
+  }
   // when slave receive data or address, set valid to 0
   when(write_addr_reg_valid && io.slave(write_port_reg).writeAddr.ready) {
       write_addr_reg_valid := false.B
   }
-  when(write_data_reg_valid && io.slave(write_port_reg).writeData.ready) {
+  when(write_data_reg_valid && io.slave(write_port_reg).writeData.ready && write_data_reg_last) {
       write_data_reg_valid := false.B
   }
 
   // when write response valid which means the write transaction is completed
-  when(aw_outstanding && w_outstanding && write_resp_reg_valid && io.master.writeResp.ready) {
+  when(aw_outstanding && w_outstanding && write_resp_reg_valid && io.master.writeResp.ready && write_data_reg_last) {
       write_resp_reg_valid := false.B
       aw_outstanding := false.B
       w_outstanding := false.B
@@ -122,6 +128,8 @@ class AXIWriteBus(val mSlaves: Int, val idWidth: Int, val addrWidth: Int, val da
     io.slave(write_port_reg).writeAddr.valid := write_addr_reg_valid
     io.slave(write_port_reg).writeAddr.bits.id := write_addr_reg_id
     io.slave(write_port_reg).writeAddr.bits.size := write_addr_reg_size
+    io.slave(write_port_reg).writeAddr.bits.burst := write_addr_reg_burst
+    io.slave(write_port_reg).writeAddr.bits.len := write_addr_reg_burst_len
     io.slave(write_port_reg).writeData.bits.data := write_data_reg
     io.slave(write_port_reg).writeData.bits.strb := write_data_reg_strb
     io.slave(write_port_reg).writeData.valid := write_data_reg_valid
