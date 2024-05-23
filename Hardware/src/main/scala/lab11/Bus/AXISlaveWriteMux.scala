@@ -112,7 +112,7 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
       }
     }
     is(sReturn){ // return response
-      when(io.in(chosen_reg).writeResp.fire){
+      when(io.out.writeResp.fire){
         state := sIdle
       }
     }
@@ -122,7 +122,7 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
     // set all mask bits to 1 in the idle state; otherwise, set them to 0
     mask.foreach(_ := 1.U)
     when(arbiter.io.out.valid){
-      io.in(arbiter.io.chosen).writeData.ready := true.B//io.out.writeData.ready
+      io.in(arbiter.io.chosen).writeData.ready := true.B
       chosen_reg := arbiter.io.chosen                              // save arbitration chosen port
       address_reg <> io.in(arbiter.io.chosen).writeAddr.bits       // save chosen port write address
       aw_determined := true.B
@@ -141,7 +141,7 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
     when(io.out.writeAddr.fire){
       aw_determined := false.B
     }
-    io.in(chosen_reg).writeData.ready := true.B//io.out.writeData.ready
+    io.in(chosen_reg).writeData.ready := true.B
     io.out.writeResp.ready := false.B
   }
   .elsewhen(state === sWaitResp){  // In this state, handle write address/data handshaking
@@ -172,7 +172,7 @@ class AXISlaveWriteMux(val nMasters: Int, val idWidth: Int, val addrWidth: Int, 
       w_determined := false.B
       data_reg.last := false.B
       data_reg.data := 0.U
-      io.out.writeResp.ready := true.B
+      io.out.writeResp.ready := ~w_determined
     }
   }
 

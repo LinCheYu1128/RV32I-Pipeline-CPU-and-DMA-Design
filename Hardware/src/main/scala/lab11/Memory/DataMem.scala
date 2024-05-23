@@ -117,7 +117,7 @@ class DataMem(
     }
     is(sReady) {
       when(io.slave.aw.valid) {
-        writeState := sWLatency
+        writeState := sWaitData
       }
     }
     is(sWaitData) {
@@ -128,9 +128,9 @@ class DataMem(
       }
     }
     is(sWLatency) {
-      when(wLatencyCounter === (latency - 1).U){
+      // when(wLatencyCounter === (latency - 1).U){
         writeState := sWaitData
-      }
+      // }
     }
     is(sFinish) {
       when(io.slave.b.ready) {
@@ -140,6 +140,11 @@ class DataMem(
   }
 
   val writeData = WireDefault(VecInit(Seq.fill(dataWidth / 8)(0.U(8.W))))
+
+  val writeDataReg = RegInit(VecInit(Seq.fill(dataWidth / 8)(0.U(8.W))))
+  writeDataReg := writeData
+
+
   List.range(0, dataWidth / 8).map { x =>
     when(io.slave.w.bits.strb(x) === 1.U) {
       writeData(x) := io.slave.w.bits.data(x * 8 + 7, x * 8)
@@ -156,6 +161,7 @@ class DataMem(
     writeAddressReg := wAddrOffset.asUInt
   }.elsewhen(writeState === sReady){
     io.slave.aw.ready := true.B
+    io.slave.w.ready := true.B
     writeAddressReg := wAddrOffset.asUInt
   }.elsewhen(writeState === sWLatency){
     io.slave.aw.ready := false.B
@@ -166,7 +172,7 @@ class DataMem(
     io.slave.b.bits.resp := 0.U
     io.slave.b.valid := false.B
     when(io.slave.w.fire) {
-      memory(writeAddressReg) := writeData.asUInt()
+      memory(writeAddressReg) := writeDataReg.asUInt()
       writeAddressReg := writeAddressReg + 1.U
       wBurstCounter := wBurstCounter + 1.U
     }
@@ -177,14 +183,15 @@ class DataMem(
     io.slave.b.bits.resp := 0.U
     io.slave.b.bits.id := writeID
     io.slave.b.valid := true.B
+    memory(writeAddressReg) := writeDataReg.asUInt()
   }
 
   when(io.dump) {
     /* Dump Memory */
     printf("\t\t======== Data Memory Dump ========\n")
     printf("\t\tFrom base address %d\n", baseAddr.U)
-    // for (i <- 0 until 20) {
-    for (i <- 36 until 46) {
+    for (i <- 0 until 20) {
+    // for (i <- 36 until 46) {
       val indexAddr = baseAddr + i * 4
       val data = memory(i)
       printf(

@@ -72,7 +72,7 @@ class top_SoC(idWidth: Int, addrWidth: Int, dataWidth: Int) extends Module {
       "Height" -> 256, // The Number of bytes
       "Width" -> 32 // unit: 32 bits
     )
-    val GlobalMemLatency: Int = 80
+    val GlobalMemLatency: Int = 10
     val GlobalMemInitFilePath: String =
       "./src/main/resource/data1.hex" // Provide the file path
   }
